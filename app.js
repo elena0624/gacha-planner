@@ -122,6 +122,12 @@ const cfgCurrencyNameA = document.getElementById('cfg-currency-name-a');
 const cfgCurrencyNameB = document.getElementById('cfg-currency-name-b');
 const cfgCurrencyNameC = document.getElementById('cfg-currency-name-c');
 
+const linkGasHelp = document.getElementById('link-gas-help');
+const gasHelpDialog = document.getElementById('gas-help-dialog');
+const btnCloseGasHelp = document.getElementById('btn-close-gas-help');
+const btnCopyGasCode = document.getElementById('btn-copy-gas-code');
+const txtGasCode = document.getElementById('txt-gas-code');
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
   // 載入 LocalStorage 中的 GAS URL 與計畫名稱
@@ -270,6 +276,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   if (settingsForm) {
     settingsForm.addEventListener('submit', handleSaveSettings);
+  }
+
+  // GAS 教學對話框事件監聽
+  if (linkGasHelp) {
+    linkGasHelp.addEventListener('click', (e) => {
+      e.preventDefault();
+      showGasHelpDialog();
+    });
+  }
+  if (btnCloseGasHelp) {
+    btnCloseGasHelp.addEventListener('click', () => gasHelpDialog.close());
+  }
+  if (btnCopyGasCode) {
+    btnCopyGasCode.addEventListener('click', () => {
+      if (txtGasCode) {
+        txtGasCode.select();
+        navigator.clipboard.writeText(txtGasCode.value).then(() => {
+          showToast('GAS 後端程式碼已成功複製！');
+        }).catch(err => {
+          console.error('複製失敗:', err);
+          showToast('複製失敗，請手動全選複製框內代碼。', 'error');
+        });
+      }
+    });
   }
 
   // 品項 CRUD 事件與重置/清空計畫
@@ -2591,3 +2621,24 @@ window.runSystemDiagnostic = function() {
   
   alert(report);
 };
+
+// --- Show GAS connection help dialog and fetch gas-code.js ---
+async function showGasHelpDialog() {
+  if (txtGasCode && !txtGasCode.value.trim()) {
+    txtGasCode.value = "正在從伺服器載入 gas-code.js 程式碼，請稍後...";
+    try {
+      const response = await fetch('gas-code.js');
+      if (response.ok) {
+        txtGasCode.value = await response.text();
+      } else {
+        txtGasCode.value = "// 讀取失敗：無法取得本地的 gas-code.js。\n// 您可以到 GitHub 專案庫中直接下載此檔案。";
+      }
+    } catch (err) {
+      console.error('載入 Apps Script 程式碼失敗:', err);
+      txtGasCode.value = "// 載入失敗：\n" + err.toString() + "\n\n// 請前往您的 GitHub 專案下載 gas-code.js。";
+    }
+  }
+  if (gasHelpDialog) {
+    gasHelpDialog.showModal();
+  }
+}
