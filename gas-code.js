@@ -47,12 +47,11 @@ function doGet(e) {
     
     var itemsData = getSheetData(activeItemsSheet);
     
-    // 如果是全新的表單，自動填入一些預設品項
+    // 如果是全新的表單，自動填入一些預設品項 (包含預設的三種代幣/券與限購設定)
     if (itemsData.length === 0) {
-      activeItemsSheet.appendRow(["品項名稱", "價格", "類別", "備註"]);
-      activeItemsSheet.appendRow(["月卡", 170, "常駐", "每日領寶石"]);
-      activeItemsSheet.appendRow(["每日禮包", 33, "每日", "限購一次"]);
-      activeItemsSheet.appendRow(["活動大禮包", 990, "活動", "限購兩次"]);
+      activeItemsSheet.appendRow(["品項名稱", "價格", "限購類型", "限購次數", "鑽石", "普通許願券", "限時許願券", "其他內容", "備註"]);
+      activeItemsSheet.appendRow(["月卡", 150, "活動期間", 1, 3000, 0, 0, "每日登入領90鑽", "核心必買"]);
+      activeItemsSheet.appendRow(["每日許願券禮包", 33, "每日", 1, 0, 1, 0, "包含一張許願券", "每日限購"]);
       itemsData = getSheetData(activeItemsSheet);
     }
     
