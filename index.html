@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>課金規劃助手 🎮 | Gacha Planner</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js CDN for spend trend graph -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- 頂部 Header & 設定 -->
+    <header class="app-header">
+      <div class="logo-area">
+        <i class="fa-solid fa-gamepad logo-icon"></i>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1>課金規劃助手</h1>
+            <button id="btn-settings" class="btn btn-outline btn-xs" style="padding: 3px 6px; font-size: 0.7rem; border-color: rgba(255,255,255,0.08); color: var(--text-muted); cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center; gap: 3px;" title="設定遊戲兌換率與CP值基準"><i class="fa-solid fa-gears"></i> 換算設定</button>
+          </div>
+          <p class="subtitle">Gacha & Billing Planner</p>
+        </div>
+      </div>
+      
+      <!-- API 連線設定 -->
+      <div class="api-config glass-card">
+        <div class="config-row" style="gap: 12px; align-items: center;">
+          <label for="gas-url" style="white-space: nowrap;"><i class="fa-solid fa-link"></i> GAS 應用程式 URL (選填):</label>
+          <input type="text" id="gas-url" placeholder="輸入 Google Apps Script URL 自動連線..." style="flex-grow: 1; min-width: 250px;" />
+          <div class="status-indicator" style="white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+            <span class="status-dot disconnected" id="status-dot"></span>
+            <span class="status-text" id="status-text" style="font-size: 0.75rem;">本地離線模式</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 控制面板 (選擇計畫與日期區間) -->
+    <section class="control-panel glass-card" style="display: flex; flex-direction: column; gap: 16px; padding: 16px 20px;">
+      <!-- 第一排：計畫選擇 -->
+      <div style="display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--panel-border); padding-bottom: 12px; flex-wrap: wrap;">
+        <label for="plan-name-select" style="font-weight: 600; color: var(--text-main); font-size: 0.9rem; white-space: nowrap; margin-bottom: 0;"><i class="fa-solid fa-folder-open" style="color: var(--accent-purple); margin-right: 6px;"></i> 目前規劃計畫：</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <select id="plan-name-select" style="width: 180px; padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.7); border: 1px solid var(--panel-border); color: var(--text-main); font-size: 0.88rem; outline: none; cursor: pointer; font-weight: 500; transition: var(--transition);"></select>
+          <button id="btn-new-plan" class="btn btn-outline btn-sm" title="建立一個全新空白的課金計畫" style="padding: 6px 12px; font-size: 0.82rem; height: 36px; border-color: rgba(168, 85, 247, 0.4); color: #c084fc;"><i class="fa-solid fa-file-circle-plus"></i> 新建計畫</button>
+          <button id="btn-delete-plan" class="btn btn-outline btn-sm" title="刪除當前所選的計畫分頁" style="padding: 6px 12px; font-size: 0.82rem; height: 36px; border-color: rgba(239, 68, 68, 0.4); color: #f87171;"><i class="fa-solid fa-trash-can"></i> 刪除計畫</button>
+        </div>
+      </div>
+      
+      <!-- 第二排：日期設定與雲端動作 -->
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <div class="input-group" style="display: flex; flex-direction: row !important; align-items: center; gap: 8px; margin-bottom: 0;">
+          <label for="start-date" style="margin-bottom: 0; color: var(--text-muted); font-size: 0.85rem;"><i class="fa-regular fa-calendar-plus" style="margin-right: 4px;"></i> 開始日期</label>
+          <input type="date" id="start-date" style="padding: 6px 10px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.5); border: 1px solid var(--panel-border); color: var(--text-main); outline: none; font-size: 0.85rem;" />
+        </div>
+        <div class="input-group" style="display: flex; flex-direction: row !important; align-items: center; gap: 8px; margin-bottom: 0;">
+          <label for="end-date" style="margin-bottom: 0; color: var(--text-muted); font-size: 0.85rem;"><i class="fa-regular fa-calendar-minus" style="margin-right: 4px;"></i> 結束日期</label>
+          <input type="date" id="end-date" style="padding: 6px 10px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.5); border: 1px solid var(--panel-border); color: var(--text-main); outline: none; font-size: 0.85rem;" />
+        </div>
+        
+        <button id="btn-generate" class="btn btn-secondary btn-sm" title="根據新日期重新生成日程表" style="padding: 6px 12px; font-size: 0.82rem; height: 34px;"><i class="fa-solid fa-arrows-rotate"></i> 套用日期</button>
+        
+        <!-- 雲端操作與本地檔案匯出/匯入按鈕 -->
+        <div class="action-buttons" style="margin-left: auto; display: flex; gap: 8px; margin-bottom: 0;">
+          <button id="btn-export-plan" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(168, 85, 247, 0.4); color: #c084fc;" title="匯出當前計畫為 JSON 檔案以供分享"><i class="fa-solid fa-file-export"></i> 匯出計畫</button>
+          <button id="btn-import-plan" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" title="從 JSON 檔案匯入計畫"><i class="fa-solid fa-file-import"></i> 匯入計畫</button>
+          <button id="btn-load" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.8rem;" title="從雲端試算表讀取資料"><i class="fa-solid fa-cloud-arrow-down"></i> 讀取雲端</button>
+          <button id="btn-save" class="btn btn-accent" style="padding: 6px 14px; font-size: 0.8rem; height: 34px;" title="將品項與日程同步到雲端或本地"><i class="fa-solid fa-cloud-arrow-up"></i> 儲存資料</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 總覽資訊板 (每日花費累計圖 + 累計數值) -->
+    <section class="summary-dashboard glass-card">
+      <!-- 每日花費累計走勢圖 -->
+      <div class="chart-container">
+        <canvas id="spend-chart"></canvas>
+      </div>
+      
+      <!-- 花費指標 -->
+      <div class="metrics-container">
+        <div class="metric highlight">
+          <span class="metric-label">預估總花費</span>
+          <span class="metric-value" id="grand-total">$0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 主體內容區 (左: 品項與購物車, 右: 日程規劃) -->
+    <main class="main-content">
+      
+      <!-- 左側：品項列表與目前規劃結算 -->
+      <aside class="sidebar">
+        <!-- 可課金品項池 -->
+        <div class="glass-card sidebar-pool">
+          <div class="sidebar-header">
+            <!-- 第一行：標題 + 新增品項按鈕 (無擠壓) -->
+            <div class="sidebar-title-row">
+              <h2><i class="fa-solid fa-list-ul"></i> 可課金品項</h2>
+              <button id="btn-add-item" class="btn btn-secondary btn-sm" title="新增自訂品項"><i class="fa-solid fa-plus"></i> 新增品項</button>
+            </div>
+            
+            <!-- 第二行：搜尋框 + 排序下拉選單 -->
+            <div class="search-row-layout">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="item-search" placeholder="搜尋品項名稱..." />
+              </div>
+              <select id="item-sort" class="sort-select" title="品項排序">
+                <option value="default">預設排序</option>
+                <option value="price-asc">價格 ↗</option>
+                <option value="price-desc">價格 ↘</option>
+                <option value="cp-desc">CP值 ↘</option>
+              </select>
+            </div>
+            
+            <!-- 第三行：重置與清空按鈕行 (單獨一行，排版整齊) -->
+            <div class="sidebar-toolbar" style="margin-bottom: 6px; display: flex; gap: 4px; flex-wrap: wrap;">
+              <button id="btn-reset-items" class="btn btn-outline btn-xs" style="flex: 1;" title="重置為預設品項"><i class="fa-solid fa-rotate-left"></i> 重置預設</button>
+              <button id="btn-clear-items" class="btn btn-outline btn-xs text-red" style="flex: 1;" title="清空列表品項"><i class="fa-solid fa-trash-can"></i> 清空</button>
+              <button id="btn-copy-items" class="btn btn-outline btn-xs" style="flex: 1.2; border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" title="從其他計畫複製或匯入品項清單"><i class="fa-solid fa-clone"></i> 複製品項</button>
+            </div>
+            
+            <!-- 品項共用/獨立模式切換 -->
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.72rem; padding: 4px 8px; background: rgba(255, 255, 255, 0.03); border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 2px;">
+              <span style="color: var(--text-muted);"><i class="fa-solid fa-code-merge" style="color: var(--accent-purple); margin-right: 4px;"></i> 品項清單模式：</span>
+              <div style="display: flex; gap: 8px;">
+                <label style="display: inline-flex; align-items: center; gap: 3px; cursor: pointer; color: var(--text-main); font-weight: 500; margin: 0;">
+                  <input type="radio" name="items-source-mode" id="items-mode-global" value="global" checked style="margin: 0; transform: scale(0.85);" /> 共用
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 3px; cursor: pointer; color: var(--text-main); font-weight: 500; margin: 0;">
+                  <input type="radio" name="items-source-mode" id="items-mode-local" value="local" style="margin: 0; transform: scale(0.85);" /> 專屬
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 品項卡片容器 -->
+          <div class="items-container" id="items-pool">
+            <!-- 會由 JS 動態生成 -->
+          </div>
+        </div>
+
+        <!-- 目前規劃結算 -->
+        <div class="glass-card sidebar-cart">
+          <h2><i class="fa-solid fa-receipt"></i> 目前規劃結算</h2>
+          <div class="cart-items" id="cart-items-list">
+            <div class="empty-state">
+              <i class="fa-solid fa-basket-shopping empty-icon"></i>
+              <p>尚未安排任何課金項目</p>
+            </div>
+          </div>
+          
+          <!-- 獲得內容物加總區 -->
+          <div id="cart-rewards-section" class="cart-rewards-section" style="display: none;">
+            <div class="rewards-title"><i class="fa-solid fa-gift"></i> 預估獲得總內容物</div>
+            <div class="rewards-grid" id="cart-rewards-list">
+              <!-- 由 JS 渲染鑽石/許願券加總 -->
+            </div>
+          </div>
+
+          <div class="cart-summary-divider"></div>
+          <div class="cart-total-row">
+            <span>合計:</span>
+            <span id="cart-grand-total">$0</span>
+          </div>
+          <a href="#" onclick="event.preventDefault(); runSystemDiagnostic();" style="display: block; text-align: center; margin-top: 15px; font-size: 0.72rem; color: var(--text-muted); text-decoration: underline; opacity: 0.6; transition: 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6"><i class="fa-solid fa-bug"></i> 執行數據診斷</a>
+        </div>
+      </aside>
+
+      <!-- 右側：每日規劃日程 -->
+      <section class="planner-grid-container">
+        <div class="planner-header">
+          <h2><i class="fa-regular fa-calendar-check"></i> 每日課金規劃</h2>
+          <div class="planner-actions">
+            <button id="btn-clear-plan" class="btn btn-outline btn-sm text-red" title="清空目前全日程的所有品項規劃"><i class="fa-solid fa-trash-can"></i> 清空全日程</button>
+            <span class="tip"><i class="fa-solid fa-info-circle"></i> 拖放品項至日期卡，可點擊 +/- 修改數量</span>
+          </div>
+        </div>
+        
+        <!-- 每日規劃網格 -->
+        <div class="planner-grid" id="planner-grid">
+          <!-- 會由 JS 動態生成 -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 品項新增/編輯 Modal -->
+  <dialog id="item-dialog" class="glass-dialog">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <h3 id="dialog-title">新增課金品項</h3>
+        <button id="btn-close-dialog" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="item-form" method="dialog">
+        <input type="hidden" id="modal-item-index" value="" />
+        
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="modal-item-name">品項名稱 *</label>
+            <input type="text" id="modal-item-name" required placeholder="例如: 月卡、等級包" />
+          </div>
+          <div class="form-group">
+            <label for="modal-item-price">價格 (NTD) *</label>
+            <input type="number" id="modal-item-price" required min="0" placeholder="例如: 170" />
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="modal-item-limit-type">限購類型</label>
+            <select id="modal-item-limit-type">
+              <option value="無限制">無限制</option>
+              <option value="每日">每日限購</option>
+              <option value="活動期間">活動期間限購</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="modal-item-limit-count">限購次數</label>
+            <input type="number" id="modal-item-limit-count" min="1" placeholder="無限制則免填" />
+          </div>
+        </div>
+
+        <!-- 內容物動態橫排輸入區 (解決寬度截斷) -->
+        <div class="form-section-title">🎁 包含內容物 (用於計算 CP 值)</div>
+        <div id="modal-contents-list" class="modal-contents-list">
+          <!-- 會由 JS 動態增減一橫排一橫排的內容物 -->
+        </div>
+        <button type="button" id="btn-modal-add-content" class="btn btn-outline btn-xs" style="margin-top: 8px; width: 100%;">
+          <i class="fa-solid fa-plus"></i> 新增內容物項目
+        </button>
+        
+        <div class="form-group" style="margin-top: 10px;">
+          <label for="modal-item-other">其他內容物描述</label>
+          <input type="text" id="modal-item-other" placeholder="例如: 金幣x50000、突破石x10" />
+        </div>
+        
+        <div class="form-group">
+          <label for="modal-item-note">備註說明</label>
+          <input type="text" id="modal-item-note" placeholder="例如: 性價比極高" />
+        </div>
+        
+        <div class="dialog-footer">
+          <button type="button" id="btn-cancel-dialog" class="btn btn-outline">取消</button>
+          <button type="submit" id="btn-submit-dialog" class="btn btn-accent">確定</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- 複製品項專用對話框 -->
+  <dialog id="copy-items-dialog" class="glass-dialog" style="max-width: 400px;">
+    <div class="dialog-header">
+      <h3 style="margin: 0; color: var(--text-main); font-size: 1rem;"><i class="fa-solid fa-clone" style="color: var(--accent-blue); margin-right: 6px;"></i> 複製其他計畫品項</h3>
+      <button id="btn-close-copy-dialog" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+      <div class="form-group">
+        <label for="copy-source-select" style="font-size: 0.85rem; color: var(--text-muted); text-align: left;">選擇品項來源計畫：</label>
+        <select id="copy-source-select" style="padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.8); border: 1px solid var(--panel-border); color: var(--text-main); font-size: 0.85rem; outline: none; cursor: pointer;"></select>
+      </div>
+      <span style="font-size: 0.72rem; color: var(--text-muted); background: rgba(255,255,255,0.02); padding: 6px 10px; border-radius: 4px; border: 1px dashed rgba(255,255,255,0.05); text-align: left;"><i class="fa-solid fa-circle-info" style="color: var(--accent-blue); margin-right: 4px;"></i> 注意：這會覆蓋目前所選計畫 of 品項清單！</span>
+      <div class="dialog-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+        <button id="btn-cancel-copy" class="btn btn-outline btn-sm">取消</button>
+        <button id="btn-confirm-copy" class="btn btn-primary btn-sm">確認複製</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 匯出與分享對話框 -->
+  <dialog id="export-dialog" class="glass-dialog" style="max-width: 450px;">
+    <div class="dialog-header">
+      <h3 style="margin: 0; color: var(--text-main); font-size: 1rem;"><i class="fa-solid fa-share-nodes" style="color: var(--accent-purple); margin-right: 6px;"></i> 匯出與分享此計畫</h3>
+      <button id="btn-close-export-dialog" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px; text-align: left;">
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">請選擇您希望匯出計畫的格式：</p>
+      
+      <!-- 選項 1: JSON 備份檔 -->
+      <div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px;">
+        <i class="fa-solid fa-file-code" style="color: var(--accent-purple); font-size: 1.2rem; margin-top: 2px;"></i>
+        <div style="flex-grow: 1;">
+          <h4 style="margin: 0 0 4px 0; font-size: 0.85rem; color: var(--text-main);">1. JSON 規劃備份檔 (.json)</h4>
+          <p style="margin: 0 0 8px 0; font-size: 0.72rem; color: var(--text-muted);">下載本網頁專用的備份檔，之後可以使用「匯入計畫」按鈕讀回網頁中。</p>
+          <button id="btn-export-json" class="btn btn-outline btn-xs" style="border-color: rgba(168, 85, 247, 0.4); color: #c084fc;">下載 JSON 檔案</button>
+        </div>
+      </div>
+      
+      <!-- 選項 2: CSV 試算表 (可在手機 Google Sheets 開啟) -->
+      <div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px;">
+        <i class="fa-solid fa-file-csv" style="color: var(--accent-green); font-size: 1.2rem; margin-top: 2px;"></i>
+        <div style="flex-grow: 1;">
+          <h4 style="margin: 0 0 4px 0; font-size: 0.85rem; color: var(--text-main);">2. CSV 試算表表格 (.csv)</h4>
+          <p style="margin: 0 0 8px 0; font-size: 0.72rem; color: var(--text-muted);">匯出為通用表格檔案。您可將其傳至手機，直接用 Google 試算表或 Excel 開啟排程。</p>
+          <button id="btn-export-csv" class="btn btn-outline btn-xs" style="border-color: rgba(16, 185, 129, 0.4); color: var(--accent-green);">下載 CSV 試算表</button>
+        </div>
+      </div>
+      
+      <!-- 選項 3: 複製文字排程表 -->
+      <div style="display: flex; align-items: flex-start; gap: 12px; padding: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px;">
+        <i class="fa-solid fa-file-lines" style="color: var(--accent-blue); font-size: 1.2rem; margin-top: 2px;"></i>
+        <div style="flex-grow: 1;">
+          <h4 style="margin: 0 0 4px 0; font-size: 0.85rem; color: var(--text-main);">3. 複製文字排程報告 (Clipboard)</h4>
+          <p style="margin: 0 0 8px 0; font-size: 0.72rem; color: var(--text-muted);">複製純文字排程報告，方便在手機 LINE 或 Discord 貼上分享與直接瀏覽。</p>
+          <button id="btn-copy-text-report" class="btn btn-outline btn-xs" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">複製純文字排程</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 遊戲換算與基準設定對話框 -->
+  <dialog id="settings-dialog" class="glass-dialog" style="max-width: 400px;">
+    <div class="dialog-header">
+      <h3 style="margin: 0; color: var(--text-main); font-size: 1rem;"><i class="fa-solid fa-gears" style="color: var(--accent-blue); margin-right: 6px;"></i> 遊戲換算與基準設定</h3>
+      <button id="btn-close-settings-dialog" class="btn-icon-close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <form id="settings-form" style="padding: 20px; display: flex; flex-direction: column; gap: 14px; text-align: left;">
+      <div class="form-group">
+        <label for="cfg-ticket-to-diamond" style="font-size: 0.85rem; color: var(--text-muted);">單抽許願券等價藍鑽數：</label>
+        <input type="number" id="cfg-ticket-to-diamond" min="1" step="1" required style="padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.8); border: 1px solid var(--panel-border); color: var(--text-main); font-size: 0.88rem;" />
+        <span style="font-size: 0.7rem; color: var(--text-muted);">設定一張一般券/限時券等於多少鑽石 (預設世界計畫是 180)</span>
+      </div>
+      
+      <div class="form-group">
+        <label for="cfg-base-diamonds-per-ntd" style="font-size: 0.85rem; color: var(--text-muted);">1 元台幣可兌換藍鑽基準 (1:N)：</label>
+        <input type="number" id="cfg-base-diamonds-per-ntd" min="0.1" step="0.1" required style="padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.8); border: 1px solid var(--panel-border); color: var(--text-main); font-size: 0.88rem;" />
+        <span style="font-size: 0.7rem; color: var(--text-muted);">用來計算 CP 值的 100% 基準線 (例如 1 元 = 4 鑽，則高於 4 鑽/元即為高 CP)</span>
+      </div>
+      
+      <div class="form-group">
+        <label for="cfg-currency-name-a" style="font-size: 0.85rem; color: var(--text-muted);">主要貨幣名稱 (如: 鑽石、寶石)：</label>
+        <input type="text" id="cfg-currency-name-a" required style="padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.8); border: 1px solid var(--panel-border); color: var(--text-main); font-size: 0.88rem;" />
+      </div>
+
+      <div class="form-group">
+        <label for="cfg-currency-name-b" style="font-size: 0.85rem; color: var(--text-muted);">一般抽卡券名稱 (如: 普通許願券、召喚券)：</label>
+        <input type="text" id="cfg-currency-name-b" required style="padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.8); border: 1px solid var(--panel-border); color: var(--text-main); font-size: 0.88rem;" />
+      </div>
+
+      <div class="form-group">
+        <label for="cfg-currency-name-c" style="font-size: 0.85rem; color: var(--text-muted);">限時抽卡券名稱 (如: 限時許願券、限定券)：</label>
+        <input type="text" id="cfg-currency-name-c" required style="padding: 8px 12px; border-radius: var(--radius-sm); background: rgba(15, 23, 42, 0.8); border: 1px solid var(--panel-border); color: var(--text-main); font-size: 0.88rem;" />
+      </div>
+      
+      <div class="dialog-footer" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+        <button type="button" id="btn-cancel-settings" class="btn btn-outline btn-sm">取消</button>
+        <button type="submit" class="btn btn-primary btn-sm">套用設定</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- 隱藏的檔案上傳輸入框 (用於匯入計畫) -->
+  <input type="file" id="import-file-input" accept=".json" style="display: none;" />
+
+  <!-- 提示訊息 Toast -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

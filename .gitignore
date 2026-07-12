@@ -1,0 +1,15 @@
+# IDEs and editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# System files
+Thumbs.db
+Desktop.ini
+
+# Log files
+*.log
